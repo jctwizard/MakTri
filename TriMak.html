@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<body bgcolor="#625D5D" text="white">
+<style>
+.arrowDown
+{
+	width: 0; 
+	height: 0;
+	
+	border-left: 25px solid transparent;
+	border-right: 25px solid transparent;
+	border-bottom: 43.3px solid lightblue;
+	
+	-moz-transform: scaleY(-1);
+	-webkit-transform: scaleY(-1);
+	-o-transform: scaleY(-1);
+	transform: scaleY(-1);
+	
+	position:absolute;
+}
+
+.arrowUp 
+{
+	width: 0; 
+	height: 0;
+	
+	border-left: 25px solid transparent;
+	border-right: 25px solid transparent;
+	border-bottom: 43.3px solid black;
+	
+	position:absolute;
+}
+</style>
+
+<button id="genButton" type ="button" onclick="beginGenerating()">make triangles</button>
+
+<span>tri count: </span>
+<input id="triLimit" type="number" name="Tri limit" style="max-width:50px" value="100">
+
+<span>tri size (%): </span>
+<input id="triSize" type="range" name="Tri size" onChange="adjustLogo()" min="1" max="20" style="vertical-align:middle" value="10">
+
+<span>interval (ms): </span>
+<input id="interval" type="number" name="Interval" style="max-width:50px" value="5">
+
+<span id="debug">Debug</span>
+
+<hr>
+</hr>
+
+<span id="triContainer"></span> 
+
+<!--
+<span class="arrow-up" style="left: 0"></span>
+
+<span class="arrow-down"  style="left: 50"></span>
+
+<span class="arrow-up"  style="left: 100"></span>
+--> 
+
+<script>
+var baseWidth = 50
+var baseRatio = 1.732;
+var scaleFactor;
+var triCount = 0;
+var triLimit;
+var position;
+var generating = false;
+var stop = false;
+var interval;
+var xMax;
+var margin = 25;
+var logo;
+var logoTri;
+var lastTri;
+
+onLoad = showLogo();
+
+function showLogo()
+{
+	scaleFactor = document.getElementById("triSize").value / 10;
+	
+	logoTri = document.createElement("span");
+	logoTri.id = "logoTri";
+	logoTri.className = "arrowUp";
+	logoTri.style.borderBottomColor = "black";
+	logoTri.style.borderLeftWidth = (baseWidth * scaleFactor) + "px";
+	logoTri.style.borderRightWidth = (baseWidth * scaleFactor) + "px";
+	logoTri.style.borderBottomWidth = (baseRatio * (baseWidth * scaleFactor)) + "px";
+	logoTri.style.left = (window.innerWidth / 2) + "px";
+	logoTri.style.top = (window.innerHeight / 2) + "px";
+	
+	logo = document.createElement("img");
+	logo.src = "http://i.imgur.com/pKRyndb.png";
+	logo.width = (baseWidth * scaleFactor);
+    logo.style.position = "absolute";
+	logo.style.left = -(baseWidth / 2) + "px";
+	logo.style.top = (baseWidth / 2) + "px";
+	
+	logoTri.appendChild(logo);
+	document.body.appendChild(logoTri);
+}
+
+function adjustLogo()
+{
+	scaleFactor = document.getElementById("triSize").value / 10;
+	
+	logoTri.style.borderLeftWidth = (baseWidth * scaleFactor) + "px";
+	logoTri.style.borderRightWidth = (baseWidth * scaleFactor) + "px";
+	logoTri.style.borderBottomWidth = (baseRatio * (baseWidth * scaleFactor)) + "px";
+	
+	logo.width = (baseWidth * scaleFactor);
+	logo.style.left = -((baseWidth * scaleFactor) / 2) + "px";
+	logo.style.top = ((baseWidth * scaleFactor) / 2) + "px";
+}
+
+function beginGenerating()
+{
+	if (!generating)
+	{
+		for (var i = 0; i < triCount; i++)
+		{
+			var tri = document.getElementById("tri" + i);
+			tri.remove(0);
+		}
+
+		triLimit = document.getElementById("triLimit").value;
+		interval = document.getElementById("interval").value;
+		position = getPosition(logoTri);
+		xMax = window.innerWidth;
+		lastTri = logoTri;
+		triCount = 0;
+	
+		generate();
+	}
+	
+	else
+	{
+		stop = true;
+	}
+}
+
+function generate()
+{
+	position = getPosition(lastTri);
+	position.x -= (baseWidth * scaleFactor);
+	
+	var newTri = document.createElement("span");
+	newTri.id = "tri" + triCount;
+	
+	newTri.style.borderLeftWidth = (baseWidth * scaleFactor) + "px";
+	newTri.style.borderRightWidth = (baseWidth * scaleFactor) + "px";
+	newTri.style.borderBottomWidth = (baseRatio * (baseWidth * scaleFactor)) + "px";
+	
+	if (lastTri.className == "arrowUp")
+	{
+		newTri.className = "arrowDown";	
+	}
+	
+	else
+	{
+		newTri.className = "arrowUp";	
+	}
+	
+	// Going vertically or horizontally
+	// vertical
+	if (Math.random() > 0.5)
+	{
+		newTri.style.left = position.x + "px";
+			
+		// Going up or down
+		// up
+		if (Math.random() > 0.5)
+		{
+			newTri.style.top = (position.y + (baseWidth * scaleFactor * baseRatio)) + "px";
+		}
+		
+		// down
+		else
+		{
+			newTri.style.top = (position.y - (baseWidth * scaleFactor * baseRatio)) + "px";
+		}
+	}
+	
+	// horizontal
+	else
+	{
+		newTri.style.top = position.y + "px";
+		
+		// Going left or right
+		// left
+		if (Math.random() > 0.5)
+		{
+			newTri.style.left = (position.x - (baseWidth * scaleFactor)) + "px";
+		}
+		
+		// right
+		else
+		{
+			newTri.style.left = (position.x + (baseWidth * scaleFactor)) + "px";
+		}
+	}
+	
+	//document.getElementById("debug").innerHTML = "xPos: " + position.x;
+	
+	newTri.style.borderBottomColor = getRandomColour();
+	
+	lastTri = newTri;
+	
+	document.body.appendChild(newTri);
+	
+	triCount++;
+	
+	document.getElementById("genButton").innerHTML = "generating... (" + triCount + "/" + triLimit + ")";
+	
+	if ((triCount < triLimit) && !stop)
+	{
+		setTimeout(generate, interval);
+		generating = true;
+	}
+	
+	else
+	{
+		document.getElementById("genButton").innerHTML = "make triangles";
+		
+		generating = false;
+		stop = false;
+	}
+}
+
+function getRandomColour() 
+{
+	var letters = '0123456789ABCDEF'.split('');
+	var colour = '#';
+	
+	for (var i = 0; i < 6; i++ ) 
+	{
+		colour += letters[Math.floor(Math.random() * 16)];
+	}
+	
+	return colour;
+}
+
+function getPosition(element) 
+{
+	var xPosition = 0;
+	var yPosition = 0;
+	
+	while(element)
+	{
+		xPosition += (element.offsetLeft - element.scrollLeft + element.clientLeft);
+		yPosition += (element.offsetTop - element.scrollTop + element.clientTop);
+		element = element.offsetParent;
+	}
+	
+	return { x: xPosition, y: yPosition };
+}
+</script>
+</body>
+</html>
